@@ -5,9 +5,9 @@
 #include <string>
 
 //define data_user
-typedef Account std::string;
-typedef Passwd std::string;
-typedef Nickname std::string;
+typedef std::string Account;
+typedef std::string Passwd;
+typedef std::string Nickname;
 typedef struct data_user{
     Account account;//identifier
     Passwd passwd;
@@ -15,11 +15,11 @@ typedef struct data_user{
 }Data_user;
 
 
-typedef Id std::string;
-typedef Name std::string;
-typedef Description std::string;
-typedef Members std::vector<Account>;
-typedef Blacklist std::vector<Account>;
+typedef std::string Id;
+typedef std::string Name;
+typedef std::string Description;
+typedef std::vector<Account> Members;
+typedef std::vector<Account> Blacklist;
 typedef struct data_room{
     Id id;//identifier
     Name name;
@@ -27,7 +27,7 @@ typedef struct data_room{
     Passwd passwd;
     Account admin;
     Members members;
-    Blacklists blacklists;
+    Blacklist blacklist;
 }Data_room;
 
 

@@ -1,10 +1,9 @@
 /*
- * Copyright
+ * Copyright (C)  puzeyu puzeyu@bupt.edu.cn
  *
+ * 2019年 05月 07日 星期二 14:40:57 CST
  *
- *
- *
- *
+ * database.hpp
  *
  */
 
@@ -82,7 +81,7 @@ int Database::AddUser(Data_user newuser)
         }
     }
 
-    Data_users.push_back(newuser);
+    data_users.push_back(newuser);
 
     return SUCCESS;
 }
@@ -93,7 +92,7 @@ int Database::GetUser(Account account, Data_user& rtn)
     {
         if(user.account == account)
         {
-            rtn=uesr;
+            rtn=user;
             return SUCCESS;
         }
     }
@@ -197,7 +196,7 @@ int Database::UserJoinRoom(Account account, Id id)
         {
             if(room.id==id)
             {
-                for(auto black:room.blacklists)
+                for(auto black:room.blacklist)
                 {
                     if(black==account)
                     {
@@ -213,19 +212,19 @@ int Database::UserJoinRoom(Account account, Id id)
     return USER_NOT_FOUND;
 }
 
-vector<Data_users> Database::GetUsersInARoom(Id id)
+int Database::GetUsersInARoom(Id id,vector<Data_user>& rtn)
 {
     for(auto room:data_rooms)
     {
         if(room.id==id)
         {
-            vector<Data_user> rtn;
+            rtn.clear();
             Data_user user;
-            for(auto account:members)
+            for(auto account:room.members)
             {
                 if(SUCCESS==GetUser(account,user))
                 {
-                    Data_users.push_back(user);
+                    rtn.push_back(user);
                 }else
                 {
                     return USER_NOT_FOUND;
@@ -251,7 +250,7 @@ int Database::OneUserLeaveRoom(Account account, Id id)
             {
                 if(member==account)
                 {
-                    swap(member, room.back());
+                    swap(member, room.members.back());
                     room.members.pop_back();
                     return SUCCESS;
                 }
@@ -267,81 +266,119 @@ string Database::ErrorHandle(int erron)
     switch(erron)
     {
         case SUCCESS:
-            Log("SUCCESS");
+            Log("SUCCESS",2);
             break;
 
         case ACCOUNT_EXIST:
-            Log("ACCOUNT_EXIST.");
+            Log("ACCOUNT_EXIST.",2);
             break;
 
         case ACCOUNT_TOO_LONG:
-            Log("ACCOUNT_TOO_LONG");
+            Log("ACCOUNT_TOO_LONG",2);
             break;
 
         case ACCOUNT_TOO_SHORT:
-            Log("ACCOUNT_TOO_SHORT");
+            Log("ACCOUNT_TOO_SHORT",2);
             break;
 
         case PASSWD_TOO_LONG:
-            Log("PASSWD_TOO_LONG");
+            Log("PASSWD_TOO_LONG",2);
             break;
 
         case PASSWD_TOO_SHORT:
-            Log("PASSWD_TOO_SHORT");
+            Log("PASSWD_TOO_SHORT",2);
             break;
 
         case NICKNAME_EXIST:
-            Log("NICKNAME_EXIST");
+            Log("NICKNAME_EXIST",2);
             break;
 
         case NICKNAME_TOO_SHORT:
-            Log("NICKNAME_EXIST");
+            Log("NICKNAME_EXIST",2);
             break;
 
         case NICKNAME_TOO_LONG:
-            Log("NICKNAME_TOO_LONG");
-            break;
-
-        case NICKNAME_TOO_SHORT:
-            Log("NICKNAME_TOO_SHORT");
+            Log("NICKNAME_TOO_LONG",2);
             break;
 
         case NOT_ADMIN:
-            Log("NOT_ADMIN");
+            Log("NOT_ADMIN",2);
             break;
 
         case USER_NOT_FOUND:
-            Log("USER_NOT_FOUND");
+            Log("USER_NOT_FOUND",2);
             break;
 
         case ROOM_NOT_FOUND:
-            Log("ROOM_NOT_FOUND");
+            Log("ROOM_NOT_FOUND",2);
             break;
 
         case BLACKLISTS:
-            Log("BLACKLISTS");
+            Log("BLACKLISTS",2);
             break;
 
         case ADMIN_NOT_ALLOWED_LEAVE:
-            Log("ADMIN_NOT_ALLOWED_LEAVE");
+            Log("ADMIN_NOT_ALLOWED_LEAVE",2);
             break;
 
         case SAVE_NOT_FOUND:
-            Log("SAVE_NOT_FOUND");
+            Log("SAVE_NOT_FOUND",2);
             break;
 
         case FORMAT_ERROR:
-            Log("FORMAT_ERROR");
+            Log("FORMAT_ERROR",2);
             break;
 
         case ROOM_ID_EXIST:
+            Log("ROOM_ID_EXIST",2);
+            break;
+
+        case ROOM_ID_TOO_SHORT:
+            Log("ROOM_ID_TOO_SHORT",2);
+            break;
+
+        case ROOM_ID_TOO_LONG:
+            Log("ROOM_ID_TOO_LONG",2);
+            break;
+
+        case ROOM_NAME_EXIST:
+            Log("ROOM_NAME_EXIST",2);
+            break;
+
+        case ROOM_NAME_TOO_SHORT:
+            Log("ROOM_NAME_TOO_SHORT",2);
+            break;
+
+        case ROOM_NAME_TOO_LONG:
+            Log("ROOM_NAME_TOO_LONG",2);
+            break;
     };
 }
 
+int Database::Load(string str)
+{
+    return SUCCESS;
+}
+
+int Database::Save(string str)
+{
+    return SUCCESS;
+}
 
 
 int Database::Log(string str, int i=1)
 {
-    fprintf(i,str);
+    FILE* fp;
+    switch(i)
+    {
+        case 1:
+            fp=stdout;
+            break;
+
+        case 2:
+            fp=stderr;
+            break;
+    }
+    fprintf(fp,str.c_str());
     return 0;
 }

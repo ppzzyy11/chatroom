@@ -5,13 +5,6 @@
  *
  * database.hpp
  *
- *
- *
- *
- *
- *
- *
- *
  */
 
 #ifndef _DATABASE_HPP_
@@ -35,13 +28,13 @@ class Database{
         vector<Data_user> GetAllUsers();
 
         int AddRoom(Data_room);
-        int GetRoom(ID, Data_room&);
+        int GetRoom(Id, Data_room&);
         vector<Data_room> GetAllRooms();
 
         int UserChangeRoomAdmin(Account,Id,Account);//user, room, new admin
         int UserJoinRoom(Account,Id);
 
-        vector<Data_user> GetUsersInARoom(Id);
+        int GetUsersInARoom(Id,vector<Data_user>&);
         int OneUserLeaveRoom(Account,Id);
 
         //int KickUserOut(Account,Id,Account);
@@ -114,6 +107,5 @@ class Database{
         static const size_t ROOM_NAME_UPPER_LENGTH =   20;
 
 };
-
 
 #endif _DATABASE_HPP_
