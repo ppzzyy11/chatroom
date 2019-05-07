@@ -5,10 +5,20 @@
  *
  * database.hpp
  *
+ * To Implement:
+ *      Load()
+ *      Save()
+ *
+ * To optimize:
+ *      Store index of data_users in hashtable
+ *      Store data_users and data_rooms in Redis or something else
  */
 
 #include "database.hpp"
 
+/*
+ * @para filenaem to load
+ */
 
 Database::Database(string load)
 {
@@ -23,9 +33,7 @@ Database::Database(string load)
         ErrorHandle(status);
         return ;
     }
-    save=load;//use to save file to this file
-
-
+    save=load;//remember the file name, save to it when destruct.
 }
 
 Database::~Database()
@@ -40,9 +48,14 @@ Database::~Database()
 }
 
 
-//Add user to database, call by Register
+/*
+ * Add user to database, call by Register
+ * @parm include all information of newuser
+ * return 0 for SUCCESS, others for failure
+ */
 int Database::AddUser(Data_user newuser)
 {
+    //check account length
     if(newuser.account.length()>ACCOUNT_UPPER_LENGTH)
     {
         return ACCOUNT_TOO_LONG;
@@ -51,6 +64,7 @@ int Database::AddUser(Data_user newuser)
         return ACCOUNT_TOO_SHORT;
     }
 
+    //check nickname length
     if(newuser.nickname.length()>NICKNAME_UPPER_LENGTH)
     {
         return NICKNAME_TOO_LONG;
@@ -59,6 +73,7 @@ int Database::AddUser(Data_user newuser)
         return NICKNAME_TOO_SHORT;
     }
 
+    //check password length
     if(newuser.passwd.length()>PASSWD_UPPER_LENGTH)
     {
         return PASSWD_TOO_LONG;
@@ -67,7 +82,7 @@ int Database::AddUser(Data_user newuser)
         return PASSWD_TOO_SHORT;
     }
 
-    //
+    //check for duplication with the existed users
     for(auto user:data_users)
     {
         if(user.account == newuser.account)
@@ -81,11 +96,19 @@ int Database::AddUser(Data_user newuser)
         }
     }
 
+    //push
     data_users.push_back(newuser);
 
     return SUCCESS;
 }
 
+/*
+ * Get the specified user information
+ *
+ * @para account of the user
+ * @para recipient of the user
+ * return 0 for SUCCESS
+ */
 int Database::GetUser(Account account, Data_user& rtn)
 {
     for(auto user:data_users)
@@ -99,13 +122,26 @@ int Database::GetUser(Account account, Data_user& rtn)
     return USER_NOT_FOUND;
 }
 
-vector<Data_user> Database::GetAllUsers()
+/*
+ * Get a vector of all users
+ * @para recipient of users
+ * return 0 for SUCCESS
+ */
+int Database::GetAllUsers(vector<Data_user>& rtn)
 {
-    return data_users;
+    rtn=data_users;
+    return SUCCESS;
 }
 
+/*
+ * Build a new room
+ *
+ * @para all information of the new room
+ * return 0 for SUCCESS
+ */
 int Database::AddRoom(Data_room newroom)
 {
+    //check for length
     if(newroom.passwd.length()>PASSWD_UPPER_LENGTH)
     {
         return PASSWD_TOO_LONG;
@@ -122,6 +158,7 @@ int Database::AddRoom(Data_room newroom)
         return ROOM_NAME_TOO_SHORT;
     }
 
+    //check for duplication
     for(auto room:data_rooms)
     {
         if(room.id == newroom.id)
@@ -139,6 +176,13 @@ int Database::AddRoom(Data_room newroom)
     return SUCCESS;
 }
 
+/*
+ * Get information of a specified room
+ *
+ * @para id of room
+ * @para recipient of room
+ * return 0 for SUCCESS
+ */
 int Database::GetRoom(Id id, Data_room& rtn)
 {
     for(auto room:data_rooms)
@@ -152,28 +196,45 @@ int Database::GetRoom(Id id, Data_room& rtn)
     return ROOM_NOT_FOUND;
 }
 
-vector<Data_room> Database::GetAllRooms()
+/*
+ * Get a vector of all rooms
+ *
+ * @para recipient
+ * return 0 for SUCCESS
+ */
+int Database::GetAllRooms(vector<Data_room>& rtn)
 {
-    return data_rooms;
+    rtn=data_rooms;
+    return SUCCESS;
 }
 
+/*
+ * one user try to Change the administor of a room
+ *
+ * @para Account of requestor
+ * @para room id
+ * @para new administor account
+ * return 0 for SUCCESS
+ */
 int Database::UserChangeRoomAdmin(Account oldadmin, Id roomid, Account newadmin)
 {
     Data_user user;
+    //check for users' existing
     if(SUCCESS!=GetUser(oldadmin,user))
     {
         return USER_NOT_FOUND;
     }
-
     if(SUCCESS!=GetUser(newadmin,user))
     {
         return USER_NOT_FOUND;
     }
 
+    //find the room
     for(auto& room:data_rooms)
     {
         if(room.id==roomid)
         {
+            //only administor can operate
             if(room.admin==oldadmin)
             {
                 room.admin=newadmin;
@@ -187,6 +248,13 @@ int Database::UserChangeRoomAdmin(Account oldadmin, Id roomid, Account newadmin)
     return ROOM_NOT_FOUND;
 }
 
+/*
+ * user join a room
+ *
+ * @para account of user
+ * @para id of room
+ * return 0 for SUCCESS
+ */
 int Database::UserJoinRoom(Account account, Id id)
 {
     Data_user user;
@@ -212,6 +280,13 @@ int Database::UserJoinRoom(Account account, Id id)
     return USER_NOT_FOUND;
 }
 
+/*
+ * get a vector of users in a room
+ *
+ * @para id of a room
+ * @para recipient
+ * return 0 for SUCCESS
+ */
 int Database::GetUsersInARoom(Id id,vector<Data_user>& rtn)
 {
     for(auto room:data_rooms)
@@ -222,13 +297,9 @@ int Database::GetUsersInARoom(Id id,vector<Data_user>& rtn)
             Data_user user;
             for(auto account:room.members)
             {
-                if(SUCCESS==GetUser(account,user))
-                {
-                    rtn.push_back(user);
-                }else
-                {
-                    return USER_NOT_FOUND;
-                }
+
+                GetUser(account,user);
+                rtn.push_back(user);
             }
             return SUCCESS;
         }
@@ -236,6 +307,13 @@ int Database::GetUsersInARoom(Id id,vector<Data_user>& rtn)
     return ROOM_NOT_FOUND;
 }
 
+/*
+ * one user leave one room
+ *
+ * @para account of a user
+ * @para id of a room
+ * return 0 for SUCCESS
+ */
 int Database::OneUserLeaveRoom(Account account, Id id)
 {
     for(auto& room:data_rooms)
@@ -261,7 +339,13 @@ int Database::OneUserLeaveRoom(Account account, Id id)
     return ROOM_NOT_FOUND;
 }
 
-string Database::ErrorHandle(int erron)
+/*
+ * ERROR Handling
+ *
+ * @para ERROR Number
+ * return an empty string
+ */
+string Database::ErrorHandle(unsigned int erron)
 {
     switch(erron)
     {
@@ -353,19 +437,38 @@ string Database::ErrorHandle(int erron)
             Log("ROOM_NAME_TOO_LONG",2);
             break;
     };
+    return "";
 }
 
+/*
+ * Load the database from a file
+ *
+ * @para file name
+ * return 0 for SUCCESS
+ */
 int Database::Load(string str)
 {
     return SUCCESS;
 }
 
+/*
+ * Save Database to a file
+ *
+ * @para file name
+ * return 0 for SUCCESS
+ */
 int Database::Save(string str)
 {
     return SUCCESS;
 }
 
-
+/*
+ * Log system
+ *
+ * @para Log content
+ * @para 1 for stdout, 2 for stderr
+ * return 0 for SUCCESS
+ */
 int Database::Log(string str, int i=1)
 {
     FILE* fp;
@@ -379,6 +482,6 @@ int Database::Log(string str, int i=1)
             fp=stderr;
             break;
     }
-    fprintf(fp,str.c_str());
+    fprintf(fp,"%s",str.c_str());
     return 0;
 }

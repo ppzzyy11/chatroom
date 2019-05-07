@@ -25,11 +25,11 @@ class Database{
 
         int AddUser(Data_user);//return 0 on success, others on different error
         int GetUser(Account, Data_user&);
-        vector<Data_user> GetAllUsers();
+        int GetAllUsers(vector<Data_user>&);
 
         int AddRoom(Data_room);
         int GetRoom(Id, Data_room&);
-        vector<Data_room> GetAllRooms();
+        int GetAllRooms(vector<Data_room>&);
 
         int UserChangeRoomAdmin(Account,Id,Account);//user, room, new admin
         int UserJoinRoom(Account,Id);
@@ -39,7 +39,7 @@ class Database{
 
         //int KickUserOut(Account,Id,Account);
 
-        string ErrorHandle(int);
+        string ErrorHandle(unsigned int);
 
     private:
         vector<Data_user> data_users;
@@ -56,41 +56,41 @@ class Database{
     protected:
 
         //AddUser Error
-        static const int SUCCESS =                      0;
-        static const int ACCOUNT_EXIST =               1<<0;
-        static const int ACCOUNT_TOO_LONG =            1<<1;
-        static const int ACCOUNT_TOO_SHORT =           1<<2;
-        static const int PASSWD_TOO_LONG =             1<<3;
-        static const int PASSWD_TOO_SHORT =            1<<4;
-        static const int NICKNAME_EXIST =              1<<5;
-        static const int NICKNAME_TOO_LONG =           1<<6;
-        static const int NICKNAME_TOO_SHORT =          1<<7;
+        static const unsigned int SUCCESS =                      0;
+        static const unsigned int ACCOUNT_EXIST =               1<<0;
+        static const unsigned int ACCOUNT_TOO_LONG =            1<<1;
+        static const unsigned int ACCOUNT_TOO_SHORT =           1<<2;
+        static const unsigned int PASSWD_TOO_LONG =             1<<3;
+        static const unsigned int PASSWD_TOO_SHORT =            1<<4;
+        static const unsigned int NICKNAME_EXIST =              1<<5;
+        static const unsigned int NICKNAME_TOO_LONG =           1<<6;
+        static const unsigned int NICKNAME_TOO_SHORT =          1<<7;
 
         //User Change Room Admin
-        static const int NOT_ADMIN =                   1<<8;
-        static const int USER_NOT_FOUND =              1<<9;
-        static const int ROOM_NOT_FOUND =              1<<10;
+        static const unsigned int NOT_ADMIN =                   1<<8;
+        static const unsigned int USER_NOT_FOUND =              1<<9;
+        static const unsigned int ROOM_NOT_FOUND =              1<<10;
 
         //User Join Room Error
-        static const int BLACKLISTS =                  1<<11;
+        static const unsigned int BLACKLISTS =                  1<<11;
 
-        //User Leave Room
-        static const int ADMIN_NOT_ALLOWED_LEAVE =     1<<12;
+        //User Leave unsigned Room
+        static const unsigned int ADMIN_NOT_ALLOWED_LEAVE =     1<<12;
 
         //Save Error
-        static const int SAVE_NOT_FOUND =              1<<13;
-        static const int FORMAT_ERROR =                1<<14;
+        static const unsigned int SAVE_NOT_FOUND =              1<<13;
+        static const unsigned int FORMAT_ERROR =                1<<14;
 
         //Add room error
-        static const int ROOM_ID_EXIST =               1<<15;
-        static const int ROOM_ID_TOO_SHORT =           1<<16;
-        static const int ROOM_ID_TOO_LONG =            1<<17;
+        static const unsigned int ROOM_ID_EXIST =               1<<15;
+        static const unsigned int ROOM_ID_TOO_SHORT =           1<<16;
+        static const unsigned int ROOM_ID_TOO_LONG =            1<<17;
 
-        static const int ROOM_NAME_EXIST =             1<<18;
-        static const int ROOM_NAME_TOO_SHORT =         1<<19;
-        static const int ROOM_NAME_TOO_LONG =          1<<20;
+        static const unsigned int ROOM_NAME_EXIST =             1<<18;
+        static const unsigned int ROOM_NAME_TOO_SHORT =         1<<19;
+        static const unsigned int ROOM_NAME_TOO_LONG =          1<<20;
 
-        static const int USER_NOT_ADMIN =              1<<21;
+        static const unsigned int USER_NOT_ADMIN =              1<<21;
 
 
 
@@ -108,4 +108,4 @@ class Database{
 
 };
 
-#endif _DATABASE_HPP_
+#endif
