@@ -6,8 +6,6 @@
  * database.hpp
  *
  * To Implement:
- *      Load()
- *      Save()
  *
  * To optimize:
  *      Store index of data_users in hashtable
