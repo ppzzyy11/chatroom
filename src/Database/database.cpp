@@ -402,6 +402,13 @@ int Database::UserJoinRoom(Account account, Id id)
     {
         for(auto& room:data_rooms)
         {
+            for(auto member:room.members)
+            {
+                if(member==account)
+                {
+                    return ACCOUNT_EXIST;
+                }
+            }
             if(room.id==id)
             {
                 for(auto black:room.blacklist)
@@ -533,91 +540,91 @@ string Database::ErrorHandle(unsigned int erron)
     switch(erron)
     {
         case SUCCESS:
-            Log(rtn+=="SUCCESS",2);
+            Log(rtn+="SUCCESS",2);
             break;
 
         case ACCOUNT_EXIST:
-            Log(rtn+=="ACCOUNT_EXIST.",2);
+            Log(rtn+="ACCOUNT_EXIST.",2);
             break;
 
         case ACCOUNT_TOO_LONG:
-            Log(rtn+=="ACCOUNT_TOO_LONG",2);
+            Log(rtn+="ACCOUNT_TOO_LONG",2);
             break;
 
         case ACCOUNT_TOO_SHORT:
-            Log(rtn+=="ACCOUNT_TOO_SHORT",2);
+            Log(rtn+="ACCOUNT_TOO_SHORT",2);
             break;
 
         case PASSWD_TOO_LONG:
-            Log(rtn+=="PASSWD_TOO_LONG",2);
+            Log(rtn+="PASSWD_TOO_LONG",2);
             break;
 
         case PASSWD_TOO_SHORT:
-            Log(rtn+=="PASSWD_TOO_SHORT",2);
+            Log(rtn+="PASSWD_TOO_SHORT",2);
             break;
 
         case NICKNAME_EXIST:
-            Log(rtn+=="NICKNAME_EXIST",2);
+            Log(rtn+="NICKNAME_EXIST",2);
             break;
 
         case NICKNAME_TOO_SHORT:
-            Log(rtn+=="NICKNAME_EXIST",2);
+            Log(rtn+="NICKNAME_EXIST",2);
             break;
 
         case NICKNAME_TOO_LONG:
-            Log(rtn+=="NICKNAME_TOO_LONG",2);
+            Log(rtn+="NICKNAME_TOO_LONG",2);
             break;
 
         case NOT_ADMIN:
-            Log(rtn+=="NOT_ADMIN",2);
+            Log(rtn+="NOT_ADMIN",2);
             break;
 
         case USER_NOT_FOUND:
-            Log(rtn+=="USER_NOT_FOUND",2);
+            Log(rtn+="USER_NOT_FOUND",2);
             break;
 
         case ROOM_NOT_FOUND:
-            Log(rtn+=="ROOM_NOT_FOUND",2);
+            Log(rtn+="ROOM_NOT_FOUND",2);
             break;
 
         case BLACKLISTS:
-            Log(rtn+=="BLACKLISTS",2);
+            Log(rtn+="BLACKLISTS",2);
             break;
 
         case ADMIN_NOT_ALLOWED_LEAVE:
-            Log(rtn+=="ADMIN_NOT_ALLOWED_LEAVE",2);
+            Log(rtn+="ADMIN_NOT_ALLOWED_LEAVE",2);
             break;
 
         case SAVE_NOT_FOUND:
-            Log(rtn+=="SAVE_NOT_FOUND",2);
+            Log(rtn+="SAVE_NOT_FOUND",2);
             break;
 
         case FORMAT_ERROR:
-            Log(rtn+=="FORMAT_ERROR",2);
+            Log(rtn+="FORMAT_ERROR",2);
             break;
 
         case ROOM_ID_EXIST:
-            Log(rtn+=="ROOM_ID_EXIST",2);
+            Log(rtn+="ROOM_ID_EXIST",2);
             break;
 
         case ROOM_ID_TOO_SHORT:
-            Log(rtn+=="ROOM_ID_TOO_SHORT",2);
+            Log(rtn+="ROOM_ID_TOO_SHORT",2);
             break;
 
         case ROOM_ID_TOO_LONG:
-            Log(rtn+=="ROOM_ID_TOO_LONG",2);
+            Log(rtn+="ROOM_ID_TOO_LONG",2);
             break;
 
         case ROOM_NAME_EXIST:
-            Log(rtn+=="ROOM_NAME_EXIST",2);
+            Log(rtn+="ROOM_NAME_EXIST",2);
             break;
 
         case ROOM_NAME_TOO_SHORT:
-            Log(rtn+=="ROOM_NAME_TOO_SHORT",2);
+            Log(rtn+="ROOM_NAME_TOO_SHORT",2);
             break;
 
         case ROOM_NAME_TOO_LONG:
-            Log(rtn+=="ROOM_NAME_TOO_LONG",2);
+            Log(rtn+="ROOM_NAME_TOO_LONG",2);
             break;
     };
     return rtn;
@@ -649,6 +656,7 @@ int Database::Load(string str)
         inf>>user.nickname;
         data_users.push_back(user);
     }
+
     inf>>size;
     for(size_t i=0;i<size;i++)
     {
@@ -663,7 +671,6 @@ int Database::Load(string str)
 
         room.members.clear();
         inf>>size2;
-        for(size_t j=0;j<size2;j++)
         {
             Account account;
             inf>>account;
@@ -678,6 +685,7 @@ int Database::Load(string str)
             inf>>account;
             room.blacklist.push_back(account);
         }
+        data_rooms.push_back(room);
     }
     inf.close();
     return SUCCESS;
