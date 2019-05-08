@@ -12,14 +12,76 @@
  * To optimize:
  *      Store index of data_users in hashtable
  *      Store data_users and data_rooms in Redis or something else
+ *      Didn't deal with the BIG ENDIAN and LiTTEL ENDIAN with the Load and Save
  */
 
 #include "database.hpp"
 
+const unsigned int Database::SUCCESS =                      0;
+const unsigned int Database::ACCOUNT_EXIST =               1<<0;
+const unsigned int Database::ACCOUNT_TOO_LONG =            1<<1;
+const unsigned int Database::ACCOUNT_TOO_SHORT =           1<<2;
+const unsigned int Database::PASSWD_TOO_LONG =             1<<3;
+const unsigned int Database::PASSWD_TOO_SHORT =            1<<4;
+const unsigned int Database::NICKNAME_EXIST =              1<<5;
+const unsigned int Database::NICKNAME_TOO_LONG =           1<<6;
+const unsigned int Database::NICKNAME_TOO_SHORT =          1<<7;
+
+//User Change Room Admin
+const unsigned int Database::NOT_ADMIN =                   1<<8;
+const unsigned int Database::USER_NOT_FOUND =              1<<9;
+const unsigned int Database::ROOM_NOT_FOUND =              1<<10;
+
+//User Join Room Error
+const unsigned int Database::BLACKLISTS =                  1<<11;
+
+//User Leave unsigned RoomDatabase::
+const unsigned int Database::ADMIN_NOT_ALLOWED_LEAVE =     1<<12;
+
+//Save Error
+const unsigned int Database::SAVE_NOT_FOUND =              1<<13;
+const unsigned int Database::FORMAT_ERROR =                1<<14;
+
+//Add room error
+const unsigned int Database::ROOM_ID_EXIST =               1<<15;
+const unsigned int Database::ROOM_ID_TOO_SHORT =           1<<16;
+const unsigned int Database::ROOM_ID_TOO_LONG =            1<<17;
+
+const unsigned int Database::ROOM_NAME_EXIST =             1<<18;
+const unsigned int Database::ROOM_NAME_TOO_SHORT =         1<<19;
+const unsigned int Database::ROOM_NAME_TOO_LONG =          1<<20;
+
+const unsigned int Database::USER_NOT_ADMIN =              1<<21;
+const unsigned int Database::ADMIN_CANNOT_BE_MEMBER =      1<<22;
+
+
+
+const size_t Database::ACCOUNT_LOWER_LENGTH =    3;
+const size_t Database::ACCOUNT_UPPER_LENGTH =   20;
+
+const size_t Database::NICKNAME_LOWER_LENGTH =   1;
+const size_t Database::NICKNAME_UPPER_LENGTH =   10;
+
+const size_t Database::PASSWD_LOWER_LENGTH =   4;
+const size_t Database::PASSWD_UPPER_LENGTH =   20;
+
+const size_t Database::ROOM_NAME_LOWER_LENGTH =   2;
+const size_t Database::ROOM_NAME_UPPER_LENGTH =   20;
+
+/*
+ * constructor without para, use databas.sav as load file name
+ */
+Database::Database()
+{
+
+    data_users.clear();
+    data_rooms.clear();
+    save="database.sav";
+}
+
 /*
  * @para filenaem to load
  */
-
 Database::Database(string load)
 {
     //load file
@@ -134,6 +196,53 @@ int Database::GetAllUsers(vector<Data_user>& rtn)
 }
 
 /*
+ * User quit, remove the rooms that User as administor, remove user from room's members if User is a member
+ *
+ * @para account of a user
+ * return 0 for SUCCESS
+ */
+int Database::UserQuit(Account account)
+{
+    vector<Data_room> rooms_left;
+    vector<Data_room> room_to_close;
+
+    for(auto& room:data_rooms)
+    {
+        if(room.admin==account)
+        {
+            room_to_close.push_back(room);
+        }else
+        {
+            for(auto& member:room.members)
+            {
+                if(member==account)
+                {
+                    member=room.members.back();
+                    room.members.pop_back();
+                    break;
+                }
+            }
+            rooms_left.push_back(room);
+
+        }
+    }
+
+    data_rooms=rooms_left;
+
+    for(auto& user:data_users)
+    {
+        if(user.account==account)
+        {
+            user=data_users.back();
+            data_users.pop_back();
+            return SUCCESS;
+        }
+    }
+
+    return USER_NOT_ADMIN;
+}
+
+/*
  * Build a new room
  *
  * @para all information of the new room
@@ -171,6 +280,12 @@ int Database::AddRoom(Data_room newroom)
         }
     }
 
+    Data_user user;
+    if(USER_NOT_FOUND==GetUser(newroom.admin,user))
+    {
+        return USER_NOT_FOUND;
+    }
+
     data_rooms.push_back(newroom);
 
     return SUCCESS;
@@ -206,6 +321,31 @@ int Database::GetAllRooms(vector<Data_room>& rtn)
 {
     rtn=data_rooms;
     return SUCCESS;
+}
+
+/*
+ * Cloase a Room:remove room from data_rooms
+ *
+ * @para account
+ * @para id
+ * return 0 for SUCCESS
+ */
+int Database::CloseRoom(Account account,Id id)
+{
+    for(auto& room:data_rooms)
+    {
+        if(room.id==id)
+        {
+            if(room.admin==account)
+            {
+                room=data_rooms.back();
+                data_rooms.pop_back();
+                return SUCCESS;
+            }
+            return USER_NOT_ADMIN;
+        }
+    }
+    return ROOM_NOT_FOUND;
 }
 
 /*
@@ -271,6 +411,10 @@ int Database::UserJoinRoom(Account account, Id id)
                         return  BLACKLISTS;
                     }
                 }
+                if(account==room.admin)
+                {
+                    return ADMIN_CANNOT_BE_MEMBER;
+                }
                 room.members.push_back(account);
                 return SUCCESS;
             }
@@ -281,7 +425,7 @@ int Database::UserJoinRoom(Account account, Id id)
 }
 
 /*
- * get a vector of users in a room
+ * get a vector of users including administor in a room
  *
  * @para id of a room
  * @para recipient
@@ -301,6 +445,8 @@ int Database::GetUsersInARoom(Id id,vector<Data_user>& rtn)
                 GetUser(account,user);
                 rtn.push_back(user);
             }
+            GetUser(room.admin,user);
+            rtn.push_back(user);
             return SUCCESS;
         }
     }
@@ -340,6 +486,42 @@ int Database::OneUserLeaveRoom(Account account, Id id)
 }
 
 /*
+ * one user Kick one user out a room
+ * @para account of user kick
+ * @para id of room
+ * @para account of user kicked
+ * return 0 for SUCCESS
+ */
+int Database::KickUserOut(Account admin,Id id,Account acc)
+{
+    for(auto& room:data_rooms)
+    {
+        if(room.id==id)
+        {
+            if(room.admin!=admin)
+            {
+                return USER_NOT_ADMIN;
+            }else
+            {
+                for(auto& member:room.members)
+                {
+                    if(member==acc)
+                    {
+                        member=room.members.back();
+                        room.members.pop_back();
+                        room.blacklist.push_back(acc);
+
+                        return SUCCESS;
+                    }
+                }
+                return USER_NOT_FOUND;
+            }
+        }
+    }
+    return ROOM_NOT_FOUND;
+}
+
+/*
  * ERROR Handling
  *
  * @para ERROR Number
@@ -347,97 +529,98 @@ int Database::OneUserLeaveRoom(Account account, Id id)
  */
 string Database::ErrorHandle(unsigned int erron)
 {
+    string rtn=std::to_string(erron);
     switch(erron)
     {
         case SUCCESS:
-            Log("SUCCESS",2);
+            Log(rtn+=="SUCCESS",2);
             break;
 
         case ACCOUNT_EXIST:
-            Log("ACCOUNT_EXIST.",2);
+            Log(rtn+=="ACCOUNT_EXIST.",2);
             break;
 
         case ACCOUNT_TOO_LONG:
-            Log("ACCOUNT_TOO_LONG",2);
+            Log(rtn+=="ACCOUNT_TOO_LONG",2);
             break;
 
         case ACCOUNT_TOO_SHORT:
-            Log("ACCOUNT_TOO_SHORT",2);
+            Log(rtn+=="ACCOUNT_TOO_SHORT",2);
             break;
 
         case PASSWD_TOO_LONG:
-            Log("PASSWD_TOO_LONG",2);
+            Log(rtn+=="PASSWD_TOO_LONG",2);
             break;
 
         case PASSWD_TOO_SHORT:
-            Log("PASSWD_TOO_SHORT",2);
+            Log(rtn+=="PASSWD_TOO_SHORT",2);
             break;
 
         case NICKNAME_EXIST:
-            Log("NICKNAME_EXIST",2);
+            Log(rtn+=="NICKNAME_EXIST",2);
             break;
 
         case NICKNAME_TOO_SHORT:
-            Log("NICKNAME_EXIST",2);
+            Log(rtn+=="NICKNAME_EXIST",2);
             break;
 
         case NICKNAME_TOO_LONG:
-            Log("NICKNAME_TOO_LONG",2);
+            Log(rtn+=="NICKNAME_TOO_LONG",2);
             break;
 
         case NOT_ADMIN:
-            Log("NOT_ADMIN",2);
+            Log(rtn+=="NOT_ADMIN",2);
             break;
 
         case USER_NOT_FOUND:
-            Log("USER_NOT_FOUND",2);
+            Log(rtn+=="USER_NOT_FOUND",2);
             break;
 
         case ROOM_NOT_FOUND:
-            Log("ROOM_NOT_FOUND",2);
+            Log(rtn+=="ROOM_NOT_FOUND",2);
             break;
 
         case BLACKLISTS:
-            Log("BLACKLISTS",2);
+            Log(rtn+=="BLACKLISTS",2);
             break;
 
         case ADMIN_NOT_ALLOWED_LEAVE:
-            Log("ADMIN_NOT_ALLOWED_LEAVE",2);
+            Log(rtn+=="ADMIN_NOT_ALLOWED_LEAVE",2);
             break;
 
         case SAVE_NOT_FOUND:
-            Log("SAVE_NOT_FOUND",2);
+            Log(rtn+=="SAVE_NOT_FOUND",2);
             break;
 
         case FORMAT_ERROR:
-            Log("FORMAT_ERROR",2);
+            Log(rtn+=="FORMAT_ERROR",2);
             break;
 
         case ROOM_ID_EXIST:
-            Log("ROOM_ID_EXIST",2);
+            Log(rtn+=="ROOM_ID_EXIST",2);
             break;
 
         case ROOM_ID_TOO_SHORT:
-            Log("ROOM_ID_TOO_SHORT",2);
+            Log(rtn+=="ROOM_ID_TOO_SHORT",2);
             break;
 
         case ROOM_ID_TOO_LONG:
-            Log("ROOM_ID_TOO_LONG",2);
+            Log(rtn+=="ROOM_ID_TOO_LONG",2);
             break;
 
         case ROOM_NAME_EXIST:
-            Log("ROOM_NAME_EXIST",2);
+            Log(rtn+=="ROOM_NAME_EXIST",2);
             break;
 
         case ROOM_NAME_TOO_SHORT:
-            Log("ROOM_NAME_TOO_SHORT",2);
+            Log(rtn+=="ROOM_NAME_TOO_SHORT",2);
             break;
 
         case ROOM_NAME_TOO_LONG:
-            Log("ROOM_NAME_TOO_LONG",2);
+            Log(rtn+=="ROOM_NAME_TOO_LONG",2);
             break;
     };
-    return "";
+    return rtn;
 }
 
 /*
@@ -448,17 +631,104 @@ string Database::ErrorHandle(unsigned int erron)
  */
 int Database::Load(string str)
 {
+
+    data_users.clear();
+    data_rooms.clear();
+    std::ifstream inf(str.c_str(),std::ios::binary);
+    if(!inf.is_open())
+    {
+        return SAVE_NOT_FOUND;
+    }
+    size_t size;
+    inf>>size;
+    for(size_t i=0;i<size;i++)
+    {
+        Data_user user;
+        inf>>user.account;
+        inf>>user.passwd;
+        inf>>user.nickname;
+        data_users.push_back(user);
+    }
+    inf>>size;
+    for(size_t i=0;i<size;i++)
+    {
+        Data_room room;
+        inf>>room.id;
+        inf>>room.name;
+        inf>>room.description;
+        inf>>room.passwd;
+        inf>>room.admin;
+
+        size_t size2;
+
+        room.members.clear();
+        inf>>size2;
+        for(size_t j=0;j<size2;j++)
+        {
+            Account account;
+            inf>>account;
+            room.members.push_back(account);
+        }
+
+        room.blacklist.clear();
+        inf>>size2;
+        for(size_t j=0;j<size2;j++)
+        {
+            Account account;
+            inf>>account;
+            room.blacklist.push_back(account);
+        }
+    }
+    inf.close();
     return SUCCESS;
 }
 
 /*
  * Save Database to a file
+ * Write Number of users first
+ * Then users
+ * Write Number of rooms second
+ * Then rooms
  *
  * @para file name
  * return 0 for SUCCESS
  */
 int Database::Save(string str)
 {
+    std::ofstream of(str.c_str(),std::ios::binary);
+    if(!of.is_open())
+    {
+        return SAVE_NOT_FOUND;
+    }
+    of<<data_users.size()<<'\n';
+    for(const auto& user:data_users)
+    {
+        of<<user.account<<'\n';
+        of<<user.passwd<<'\n';
+        of<<user.nickname<<'\n';
+    }
+    of<<data_rooms.size()<<'\n';
+    for(const auto& room:data_rooms)
+    {
+        of<<room.id<<'\n';
+        of<<room.name<<'\n';
+        of<<room.description<<'\n';
+        of<<room.passwd<<'\n';
+        of<<room.admin<<'\n';
+        of<<room.members.size()<<'\n';
+        for(const auto& account:room.members)
+        {
+            of<<account<<'\n';
+        }
+
+        of<<room.blacklist.size()<<'\n';
+        for(const auto& account:room.blacklist)
+        {
+            of<<account<<'\n';
+        }
+    }
+
+    of.close();
     return SUCCESS;
 }
 
