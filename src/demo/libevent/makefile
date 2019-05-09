@@ -4,7 +4,7 @@
 #
 
 exec = server.out client.out 
-CFLAGS = -levent -I/usr/local/include -L/usr/local/lib -levent
+CFLAGS = -lpthread -I/usr/local/include -L/usr/local/lib -levent
 
 CC = gcc
 
