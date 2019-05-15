@@ -19,6 +19,11 @@
  *
  *          done some
  *
+ *      remove information of a client when the client quit:
+ *          in the error_callback
+ *
+ *      send a message to the application layer and receive commands (send STRING to WHOM)
+ *
  *    How:
  *
  *    To optimize:
@@ -41,6 +46,10 @@
 #include <event2/listener.h>
 #include <event2/util.h>
 #include <event2/event.h>
+
+#include <vector>
+#include <cstring>
+#include <cstdlib>
 
 const size_t MSG_MAX_LEN= 1025;
 
@@ -81,11 +90,10 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Initilialize libevent.\n");
     }
 
-	bzero(&addr, sizeof(addr));
+	memset(&addr,0, sizeof(addr));
 	addr.sin_family = AF_INET;
     addr.sin_addr.s_addr=htonl(INADDR_ANY);
 	addr.sin_port = htons(atoi(argv[1]));
-    printf("1");
     fflush(stdout);
 
 
@@ -127,9 +135,10 @@ static void
 accept_cb(struct evconnlistener *listener, evutil_socket_t fd,
     struct sockaddr *sa, int socklen, void *user_data)
 {
-	struct event_base *base = user_data;
+	struct event_base *base = (struct event_base*)user_data;
 	struct bufferevent *bev;
 
+    //build a new bufferevent for the new client.
 	bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
 	if (!bev) {
 		fprintf(stderr, "Error constructing bufferevent!");
@@ -147,22 +156,25 @@ static void clnt_write_cb(struct bufferevent *bev, void *user_data)
 	struct evbuffer *output = bufferevent_get_output(bev);
 	if (evbuffer_get_length(output) == 0) {
 		printf("flushed answer\n");
-		/*bufferevent_free(bev);//close when write over*/
 	}
 }
 static void clnt_read_cb(struct bufferevent* bev, void *user_data)
 {
     struct evbuffer *input = bufferevent_get_input(bev);
     char msg[MSG_MAX_LEN];
-    bzero(msg,sizeof(msg));
+    memset(msg,0,sizeof(msg));
     int len=0;
-    //output the client sock fd
+
+
+    //recv the TCP stream, send it to the converter, get the return commands including (1. client's bev; 2. string to send.)
     fprintf(stdout,"Received:");
     while(len=evbuffer_remove(input,msg,sizeof(msg)-1))
     {
         fprintf(stdout,"%s\n",msg);
     }
     fflush(stdout);
+
+    //send string to the client, dev
     char* data="ACK\n";
     bufferevent_write(bev,data,strlen(data)+1);
 
@@ -172,6 +184,9 @@ static void clnt_error_cb(struct bufferevent* bev,short events, void *user_data)
 {
 	if (events & BEV_EVENT_EOF) {
 		printf("Connection closed.\n");
+        //send a message to the application layer to remove the client's information.
+        //get a vector of messages(send STRING to WHOM)
+
 	} else if (events & BEV_EVENT_ERROR) {
 		printf("Got an error on the connection: %s\n",
 		    strerror(errno));/*XXX win32*/
@@ -183,7 +198,7 @@ static void clnt_error_cb(struct bufferevent* bev,short events, void *user_data)
 
 static void signal_cb(evutil_socket_t sig, short events, void *user_data)
 {
-	struct event_base *base = user_data;
+	struct event_base *base = (struct event_base*)user_data;
 	struct timeval delay = { 2, 0 };
 
 	printf("Caught an interrupt signal; exiting cleanly in two seconds.\n");

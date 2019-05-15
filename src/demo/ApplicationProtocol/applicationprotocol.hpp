@@ -17,8 +17,6 @@ class ApplicationProtocol{
     public:
         ApplicationProtocol();
         ~ApplicationProtocol();
-        int In(vector<char>);
-        int Out(vector<vector<char>>&)
 
     private:
 
