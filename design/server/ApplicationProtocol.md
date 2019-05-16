@@ -8,6 +8,9 @@ no.|content|Description
 
 3rd byte|opetion type|message, join room, so on.
 4th-nth|content|NULL
+account first must
+content follows.
+
 (strings are separated by '\n')
 ##Operation
 
@@ -146,9 +149,11 @@ content:
 
 ### SUCCESS
 content:
+    - success string
 
-### FAILUE
+### FAILURE
 content:
+    - cause string
 
 
 
