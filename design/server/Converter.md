@@ -9,3 +9,6 @@ Call interface of libevent and application layer, receive the TCP stream and con
 4. Receive application's message.
 5. Convert TCP stream into messages of application layer.
 6. Send messages
+7. Deal with the online and offline status
+8. When one user online, send him messages sent to him when offline.
+9. If message except the Authentation sent to AppLayer, we assume that the user is admitted.

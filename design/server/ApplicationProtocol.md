@@ -30,6 +30,11 @@ response:
 
 
 ### Login
+
+--------------------------------------------------------------------------------
+ignore this "Login", the online and offline status are managed by the Converter.
+--------------------------------------------------------------------------------
+
 code:2
 content:
     - account
@@ -42,6 +47,9 @@ response:
     - reason
 
 ### Quit
+--------------------------------------------------------------------------------
+ignore this "Login", the online and offline status are managed by the Converter.
+--------------------------------------------------------------------------------
 code:3
 content: 
     - account 
@@ -56,12 +64,14 @@ response:
 ### GetRooms
 code:4
 content: 
+    - account 
 
 response:
     SUCCESS:
     - room lists separated by '\n'
         - room id 
         - room name 
+        - room admin's nickname
         - room description
 
     FAILUE: 
@@ -131,7 +141,7 @@ content:
     - room id
 
 response:
-    - list of rooms
+    - cause
 
 ### PrivateMessage
 code 12
@@ -157,4 +167,19 @@ content:
 
 
 
+### GetRoom
+code:16
+content: 
+    - account 
+    - room id
+
+response:
+    SUCCESS:
+    - room id 
+    - room name 
+    - room admin's nickname
+    - room description
+
+    FAILUE: 
+    - reason
 

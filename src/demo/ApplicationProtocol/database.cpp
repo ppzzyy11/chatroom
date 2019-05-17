@@ -534,11 +534,11 @@ int Database::KickUserOut(Account admin,Id id,Account acc)
  */
 string Database::ErrorHandle(unsigned int erron)
 {
-    string rtn=std::to_string(erron);
+    string rtn="";//std::to_string(erron);
     switch(erron)
     {
         case SUCCESS:
-            Log(rtn+="SUCCESS",2);
+            Log(rtn+="SUCCESS",1);
             break;
 
         case ACCOUNT_EXIST:
@@ -745,17 +745,22 @@ int Database::Save(string str)
  * @para 1 for stdout, 2 for stderr
  * return 0 for SUCCESS
  */
-int Database::Log(string str, int i=1)
+int Database::Log(string str, int i=-1)
 {
     FILE* fp;
     switch(i)
     {
+        case -1:
+            return 0;
+
         case 1:
             fp=stdout;
+            str="\033[32m"+str+"\n\033[0m";
             break;
 
         case 2:
             fp=stderr;
+            str="\033[31m"+str+"\n\033[0m";
             break;
     }
     fprintf(fp,"%s",str.c_str());

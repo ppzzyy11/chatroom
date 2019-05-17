@@ -17,6 +17,9 @@
 #include "database.hpp"
 #include "datastructure.hpp"
 
+using std::vector;
+using std::string;
+using std::pair;
 class ApplicationProtocol:public Database
 {
     public:
@@ -28,15 +31,19 @@ class ApplicationProtocol:public Database
         std::vector<std::pair<std::string,std::string>> Exec(string command);
     private:
         string GetStr(const string&,size_t&);
-        int Register(std::vector<std::pair<std::string,std::string>>&,\
+        int AppRegister(std::vector<std::pair<std::string,std::string>>&,\
                 Data_user user);
         int Login(std::vector<std::pair<std::string,std::string>>&,\
                 Data_user user);
+        int AppGetRoom(vector<pair<string,string>>&,Data_user,Data_room);
+        int AppGetRooms(vector<pair<string,string>>&,Data_user);
+        int AppBuildRoom(vector<pair<string,string>>&,Data_user,Data_room);
 
 
         static const unsigned char REGISTER;
         static const unsigned char LOGIN;
         static const unsigned char QUIT;
+        static const unsigned char GET_ROOM;
         static const unsigned char GET_ROOMS;
         static const unsigned char BUILD_ROOM;
         static const unsigned char CLOSE_ROOM;
