@@ -1,0 +1,10 @@
+Write a google test to test the Application
+to test: 
++ join room  
++ Get Users in Room
++ change room admin
++ quit room 
++ close room
++ kick user
++ send message in room
++ private message

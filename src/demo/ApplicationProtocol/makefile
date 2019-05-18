@@ -3,8 +3,8 @@
 # pzy, 2019-05-08 10:47
 #
 CFLAGS = -pthread -lgtest -std=c++11 -Wall
-exec = main.out
-obj = main.o applicationprotocol.o database.o
+exec = test_application.out
+obj = test_application.o applicationprotocol.o database.o
 
 all:$(obj)
 	@echo "\033[34mmakefile needs your attention\033[1;37m"
