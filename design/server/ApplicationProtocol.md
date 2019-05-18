@@ -121,6 +121,7 @@ conde 8
 content: 
     - user account
     - room id
+    - room passwd
 
 ### QuitRoom
 code 9 
@@ -138,9 +139,19 @@ content:
 ### GetUsersInRoom
 code 11
 content:
+    - account
     - room id
 
 response:
+    SUCCESS:
+    - admin
+    |   - nickname
+    |   - account
+    users' list
+    - nickname 
+    - account
+
+    FAILUE:
     - cause
 
 ### PrivateMessage

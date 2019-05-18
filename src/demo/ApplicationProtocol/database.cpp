@@ -52,6 +52,7 @@ const unsigned int Database::ROOM_NAME_TOO_LONG =          1<<20;
 const unsigned int Database::USER_NOT_ADMIN =              1<<21;
 const unsigned int Database::ADMIN_CANNOT_BE_MEMBER =      1<<22;
 
+const unsigned int Database::PASSWD_NOT_RIGHT=             1<<23;
 
 
 const size_t Database::ACCOUNT_LOWER_LENGTH =    3;
@@ -60,7 +61,7 @@ const size_t Database::ACCOUNT_UPPER_LENGTH =   20;
 const size_t Database::NICKNAME_LOWER_LENGTH =   1;
 const size_t Database::NICKNAME_UPPER_LENGTH =   10;
 
-const size_t Database::PASSWD_LOWER_LENGTH =   4;
+const size_t Database::PASSWD_LOWER_LENGTH =   3;
 const size_t Database::PASSWD_UPPER_LENGTH =   20;
 
 const size_t Database::ROOM_NAME_LOWER_LENGTH =   2;
@@ -348,6 +349,7 @@ int Database::CloseRoom(Account account,Id id)
 
 /*
  * one user try to Change the administor of a room
+ * old admin quit
  *
  * @para Account of requestor
  * @para room id
@@ -376,6 +378,14 @@ int Database::UserChangeRoomAdmin(Account oldadmin, Id roomid, Account newadmin)
             if(room.admin==oldadmin)
             {
                 room.admin=newadmin;
+                for(auto& mem:room.members)
+                {
+                    if(mem==newadmin)
+                    {
+                        mem=room.members.back();
+                        room.members.pop_back();
+                    }
+                }
                 return SUCCESS;
             }else
             {
@@ -393,7 +403,7 @@ int Database::UserChangeRoomAdmin(Account oldadmin, Id roomid, Account newadmin)
  * @para id of room
  * return 0 for SUCCESS
  */
-int Database::UserJoinRoom(Account account, Id id)
+int Database::UserJoinRoom(Account account, Id id, Passwd passwd)
 {
     Data_user user;
     if(SUCCESS==GetUser(account,user))
@@ -420,6 +430,10 @@ int Database::UserJoinRoom(Account account, Id id)
                 {
                     return ADMIN_CANNOT_BE_MEMBER;
                 }
+                if(passwd!=room.passwd)
+                {
+                    return PASSWD_NOT_RIGHT;
+                }
                 room.members.push_back(account);
                 return SUCCESS;
             }
@@ -444,14 +458,14 @@ int Database::GetUsersInARoom(Id id,vector<Data_user>& rtn)
         {
             rtn.clear();
             Data_user user;
+            GetUser(room.admin,user);
+            rtn.push_back(user);
             for(auto account:room.members)
             {
 
                 GetUser(account,user);
                 rtn.push_back(user);
             }
-            GetUser(room.admin,user);
-            rtn.push_back(user);
             return SUCCESS;
         }
     }
@@ -573,8 +587,8 @@ string Database::ErrorHandle(unsigned int erron)
             Log(rtn+="NICKNAME_TOO_LONG",2);
             break;
 
-        case NOT_ADMIN:
-            Log(rtn+="NOT_ADMIN",2);
+        case USER_NOT_ADMIN:
+            Log(rtn+="USER_NOT_ADMIN",2);
             break;
 
         case USER_NOT_FOUND:
@@ -591,6 +605,10 @@ string Database::ErrorHandle(unsigned int erron)
 
         case ADMIN_NOT_ALLOWED_LEAVE:
             Log(rtn+="ADMIN_NOT_ALLOWED_LEAVE",2);
+            break;
+
+        case PASSWD_NOT_RIGHT:
+            Log(rtn+="PASSWD_NOT_RIGHT",2);
             break;
 
         case SAVE_NOT_FOUND:
@@ -624,6 +642,7 @@ string Database::ErrorHandle(unsigned int erron)
         case ROOM_NAME_TOO_LONG:
             Log(rtn+="ROOM_NAME_TOO_LONG",2);
             break;
+
     };
     return rtn;
 }

@@ -38,6 +38,14 @@ class ApplicationProtocol:public Database
         int AppGetRoom(vector<pair<string,string>>&,Data_user,Data_room);
         int AppGetRooms(vector<pair<string,string>>&,Data_user);
         int AppBuildRoom(vector<pair<string,string>>&,Data_user,Data_room);
+        int AppJoinRoom(vector<pair<string,string>>&,Data_user,Data_room);
+        int AppGetUsersInRoom(vector<pair<string,string>>&,Data_user,Data_room);
+        int AppChangeRoomAdmin(vector<pair<string,string>>&,Account,Id,Account);
+        int AppQuitRoom(vector<pair<string,string>>&,Data_user,Data_room);
+        int AppCloseRoom(vector<pair<string,string>>&, Data_user, Data_room);
+        int AppKickUser(vector<pair<string,string>>&,Account,Id,Account);
+        int AppSendMessageInRoom(vector<pair<string,string>>&,Account,Id,string);
+        int AppPrivateMessage(vector<pair<string,string>>&,Account,Account,string);
 
 
         static const unsigned char REGISTER;

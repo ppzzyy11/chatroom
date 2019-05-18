@@ -54,7 +54,7 @@ class Database{
         int UserChangeRoomAdmin(Account,Id,Account);//user, room, new admin
 
 
-        int UserJoinRoom(Account,Id);
+        int UserJoinRoom(Account,Id,Passwd);
         int GetUsersInARoom(Id,vector<Data_user>&);
         int OneUserLeaveRoom(Account,Id);
 
@@ -100,6 +100,8 @@ class Database{
 
         static const unsigned int USER_NOT_ADMIN;
         static const unsigned int ADMIN_CANNOT_BE_MEMBER;
+
+        static const unsigned int PASSWD_NOT_RIGHT;
 
 
 
