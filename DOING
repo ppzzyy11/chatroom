@@ -1,18 +1,4 @@
-Design the Converter
-Abilities:
-- record the map of "bev to account" and "account to bev"
-- Be called by the "libevent", return a vector of commands that "libevent" can execute(#1).
-- Call interfaces of ApplicationProtocol, convert the commands(#2) returned by the ApplicationProtocol into format that "libevent" can execute.(#1)
-- login and quit logics.(should cooperate with the "ApplicationProtocol")
-- manipulate the online and offline status of users(#3)
-- store messages sent to offline user, send the messages to the user when online.
+complete the Converter
 
+complete the Login interaface of Application Protocol
 
-#1
-convert the stream bytes from different bev, send them to "ApplicationProtocol" when receive a "complete" message. A "complete" messages means that the message is just the length to be executed.
-
-#2
-get a vector of messages that consist of two parts of string "account" and "message", convert the messages into "bev" and "message" and return them to the "libevent", so the "libevent" knows "write what to which bev"? And something that you shall pay attention is that only the online user's messages is returned to the "libevent".
-
-#3 
-Be called by the "libevent", and manipulate the map of "bev to account" and "account to bev".

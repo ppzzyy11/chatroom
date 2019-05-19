@@ -1,0 +1,23 @@
+#Buffer
+description:
+    A class that convert the bytes into "Application" messages.
+
+##Constructor
+parameter: (void)
+when bev* connect.
+
+##Destructor
+when bev* close its connection.
+
+##Interface
+vector<string> Pour(vector<char>);
+
+@para: new bytes added to the end of the buffer.
+
+@return: a vector of "Application" messages that is generated. Empty if no messages.
+
+
+##Datastructure
+
+string pipe;//the message that is generated.
+

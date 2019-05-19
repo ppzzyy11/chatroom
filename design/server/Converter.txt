@@ -1,0 +1,37 @@
+# Converter
+## Description:
+Call interface of libevent and application layer, receive the TCP stream and convert it into Application Message 
+
+## Constructor
+
+
+## Deconstructor
+
+## Interfaces
+
+### accept_cb
+Descriptio:new client connect into the server.
+create a "Buffer" for bev*
+Input: bev*
+return: nothing
+
+### clnt_read_cb
+Description:New message from client.
+Input: bev*,vector<char>
+return: vector<pair<bev*,string>>
+
+### clnt_error_cb
+Description:
+clear the "Buffer" of the bev*
+remove the mapping of bev* and account
+create a "Offline Messages" for the account
+input: bev*
+return: nothing
+
+## Datastucture
+
+a list of "Buffer" for each bev*
+map bev* to account
+map account to bev*
+a list of "Offline Messages" for offline account.
+
