@@ -3,7 +3,7 @@
 # puzeyu, 2019-05-06 23:07
 #
 
-exec = server.out client.out 
+exec = client.out 
 CFLAGS = -lpthread -I/usr/local/include -L/usr/local/lib -levent
 
 CC = gcc

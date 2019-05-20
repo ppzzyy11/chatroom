@@ -24,11 +24,31 @@ char quit=0;
 void Read(int rd);
 void Write(int wr);
 
+string AppMessage(unsigned char oper, vector<string> strs)
+{
+    string rtn="";
+
+    rtn.push_back(oper);
+
+    for(auto str:strs)
+    {
+        rtn=rtn+str+'\n';
+    }
+
+    int len=rtn.size();
+    char len0=len%256;
+    char len1=(len/256)%256;
+    rtn=len0+rtn;
+    rtn=len1+rtn;
+
+    return rtn;
+
+}
 
 int main(int argc, char* argv[])
 {
 
-    if(argc<2)
+    if(argc<3)
     {
         fprintf(stderr,"Usage: %s <ip> <port>\n",argv[0]);
         return 1;
@@ -112,7 +132,6 @@ void Write(int wr)
     while(1)
     {
 
-        fprintf(stdout,"Please input message to send(EXIT! to exit):");
         bzero(txt,sizeof(txt));
         char ch;
         int i=0;

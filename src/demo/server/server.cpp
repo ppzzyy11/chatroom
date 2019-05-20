@@ -51,7 +51,11 @@
 #include <cstring>
 #include <cstdlib>
 
+#include "converter.hpp"
+
 const size_t MSG_MAX_LEN= 1025;
+
+Converter con;
 
 
 static void accept_cb(struct evconnlistener*,evutil_socket_t,struct sockaddr *,int socklen,void*);
@@ -145,8 +149,9 @@ accept_cb(struct evconnlistener *listener, evutil_socket_t fd,
 		event_base_loopbreak(base);
 		return;
 	}
-	bufferevent_setcb(bev, clnt_read_cb, clnt_write_cb, clnt_error_cb, NULL);
+	bufferevent_setcb(bev, clnt_read_cb, clnt_write_cb, clnt_error_cb, bev);
 	bufferevent_enable(bev, EV_WRITE|EV_READ);
+    con.ConAccept((void*)bev);
 
     fprintf(stdout,"new connection from client %d.\n",fd);
 }
@@ -167,16 +172,24 @@ static void clnt_read_cb(struct bufferevent* bev, void *user_data)
 
 
     //recv the TCP stream, send it to the converter, get the return commands including (1. client's bev; 2. string to send.)
-    fprintf(stdout,"Received:");
+    //fprintf(stdout,"Received:");
+    std::vector<char> chs;
     while(len=evbuffer_remove(input,msg,sizeof(msg)-1))
     {
-        fprintf(stdout,"%s\n",msg);
+        for(int i=0;i<len;i++)
+        {
+            chs.push_back(msg[i]);
+        }
     }
-    fflush(stdout);
+    std::vector<std::pair<void*,std::string>> rtn=con.ConRead(user_data,chs);
+    //fflush(stdout);
 
     //send string to the client, dev
-    char* data="ACK\n";
-    bufferevent_write(bev,data,strlen(data)+1);
+    //char* data="ACK\n";
+    for(auto par:rtn)
+    {
+        bufferevent_write((bufferevent*)par.first,par.second.c_str(),strlen(par.second.c_str()));
+    }
 
 }
 
@@ -186,7 +199,7 @@ static void clnt_error_cb(struct bufferevent* bev,short events, void *user_data)
 		printf("Connection closed.\n");
         //send a message to the application layer to remove the client's information.
         //get a vector of messages(send STRING to WHOM)
-
+        con.ConError(user_data);
 	} else if (events & BEV_EVENT_ERROR) {
 		printf("Got an error on the connection: %s\n",
 		    strerror(errno));/*XXX win32*/

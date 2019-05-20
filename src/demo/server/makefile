@@ -1,24 +1,23 @@
 #
 # makefile
-# puzeyu, 2019-05-06 23:07
+# pzy, 2019-05-08 10:47
 #
+CFLAGS = -pthread -lgtest -std=c++11 -Wall -levent
+exec = server.out
+obj = server.o converter.o applicationprotocol.o database.o buffer.o
 
-exec = server.out 
-CFLAGS = -lpthread -I/usr/local/include -L/usr/local/lib -levent -std=c++11
+all:$(obj)
+	@echo "\033[34mmakefile needs your attention\033[1;37m"
+	@echo "\033[1;32mgenerate \033[0;33m"$(exec)"\033[1;37m"
+	$(CXX) $(obj) $(CFLAGS) -o $(exec)
 
-CC = g++
+$(obj):%.o:%.cpp
+	@echo "\033[1;32mgenerate \033[0;33m"$@"\033[1;37m"
+	$(CXX) -c $< $(CFLAGS) -o $@
 
-all:$(exec)
-	@echo "makefile needs your attention"
-
-$(exec):%.out:%.cpp
-	-$(CC) $< $(CFLAGS) -o $@
-
-
+#.PHONY
 clean:
-	-rm $(exec)
-
-
-
+	@echo "\033[1;31m"
+	rm $(exec) $(obj)
 # vim:ft=make
 #
