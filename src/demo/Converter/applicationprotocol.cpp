@@ -28,7 +28,7 @@ const unsigned char ApplicationProtocol::SUCCESS=14;
 const unsigned char ApplicationProtocol::FAILURE=15;
 const unsigned char ApplicationProtocol::GET_ROOM=16;
 
-ApplicationProtocol::ApplicationProtocol(string str):Database(str)
+ApplicationProtocol::ApplicationProtocol(string load):Database(load)
 {
 }
 

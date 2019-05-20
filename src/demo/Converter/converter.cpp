@@ -14,6 +14,16 @@ using std::vector;
 using std::string;
 using std::unordered_map;
 
+Converter::Converter(string load):ApplicationProtocol(load)
+{
+    //load
+
+    bev2acc.clear();
+    acc2bev.clear();
+    bev2buf.clear();
+    off_msgs.clear();
+}
+
 Converter::Converter()
 {
     //load
@@ -50,7 +60,13 @@ vector<pair<void*,string>> Converter::ConRead(void* bev, vector<char> bytes)
             rtn_app=Exec(msg);
             for(auto r:rtn_app)
             {
-                rtn.push_back(make_pair(acc2bev[r.first],r.second));
+                if(acc2bev.find(r.first)!=acc2bev.end())//receiver online
+                {
+                    rtn.push_back(make_pair(acc2bev[r.first],r.second));
+                }else//receiver offline, push messages into the offl_msgs
+                {
+                    off_msgs[r.first].push_back(r.second);
+                }
             }
         }
     }else//only login is allowed.
@@ -60,20 +76,26 @@ vector<pair<void*,string>> Converter::ConRead(void* bev, vector<char> bytes)
         for(auto msg:msgs)
         {
             account=Login(msg);
-            if(account=="")
+            if(account=="")//Login failure
             {
-                ;
-            }else
+                rtn.push_back(make_pair(bev,"Login FAILURE.\n"));
+                break;
+            }else//login success, get the account
             {
                 bev2acc[bev]=account;
                 acc2bev[account]=bev;
                 rtn.push_back(make_pair(bev,"Login SUCCESSFULLY.\n"));
+                //send off_msgs
+                if(off_msgs.find(account)!=off_msgs.end())
+                {
+                    for(auto msg:off_msgs[account])
+                    {
+                        rtn.push_back(make_pair(bev,msg));
+                    }
+                    off_msgs.erase(msg);
+                }
                 break;
             }
-        }
-        if(rtn.size()==0)
-        {
-            rtn.push_back(make_pair(bev,"Login FAILURE.\n"));
         }
     }
     return rtn;

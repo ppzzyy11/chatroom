@@ -29,6 +29,7 @@ using std::unordered_map;
 class Converter:public ApplicationProtocol
 {
     public:
+        Converter(string);
         Converter();
         ~Converter();
 
