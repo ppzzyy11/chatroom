@@ -520,17 +520,19 @@ int ApplicationProtocol::AppCloseRoom(vector<pair<string,string>>& rtn, Data_use
 int ApplicationProtocol::AppKickUser(vector<pair<string,string>>& rtn, Account admin, Id id, Account kicked)
 {
     pair<string,string> tmp;
+    unsigned int status;
     tmp.first=admin;
 
     Data_room room1;
     GetRoom(id,room1);
+
     vector<Data_user> users;
     GetUsersInARoom(room1.id,users);
 
     Data_user kicked_user;
     GetUser(kicked,kicked_user);
 
-    unsigned int status = KickUserOut(admin,id,kicked);
+    status = Database::KickUserOut(admin,id,kicked);
     tmp.second=ErrorHandle(status);
 
     rtn.push_back(tmp);

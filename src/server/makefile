@@ -3,7 +3,7 @@
 # pzy, 2019-05-08 10:47
 #
 CFLAGS = -pthread -lgtest -std=c++11 -Wall -levent
-exec = server.out
+exec = server.out 
 obj = server.o converter.o applicationprotocol.o database.o buffer.o
 
 all:$(obj)

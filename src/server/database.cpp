@@ -90,12 +90,12 @@ Database::Database(string load)
     save="";
 
     int status = Load(load);
+    save=load;//remember the file name, save to it when destruct.
     if( status!=0 )
     {
         ErrorHandle(status);
         return ;
     }
-    save=load;//remember the file name, save to it when destruct.
 }
 
 Database::~Database()
@@ -514,6 +514,7 @@ int Database::OneUserLeaveRoom(Account account, Id id)
  */
 int Database::KickUserOut(Account admin,Id id,Account acc)
 {
+    std::cout<<"Kick starts."<<"\n";
     for(auto& room:data_rooms)
     {
         if(room.id==id)
@@ -521,20 +522,28 @@ int Database::KickUserOut(Account admin,Id id,Account acc)
             if(room.admin!=admin)
             {
                 return USER_NOT_ADMIN;
-            }else
+            }else//room.admin==admin
             {
-                for(auto& member:room.members)
+                if(room.admin==acc)
                 {
-                    if(member==acc)
+                    return ADMIN_NOT_ALLOWED_LEAVE;
+                }else
+                {
+                    std::cout<<"Kicked:"<<acc<<"\n";
+                    for(auto& member:room.members)
                     {
-                        member=room.members.back();
-                        room.members.pop_back();
-                        room.blacklist.push_back(acc);
+                        std::cout<<"member:"<<member<<std::endl;
+                        if(member==acc)
+                        {
+                            member=room.members.back();
+                            room.members.pop_back();
+                            room.blacklist.push_back(acc);
 
-                        return SUCCESS;
+                            return SUCCESS;
+                        }
                     }
+                    return USER_NOT_FOUND;
                 }
-                return USER_NOT_FOUND;
             }
         }
     }
@@ -659,7 +668,7 @@ int Database::Load(string str)
 
     data_users.clear();
     data_rooms.clear();
-    std::ifstream inf(str.c_str(),std::ios::binary);
+    std::ifstream inf(str.c_str());
     if(!inf.is_open())
     {
         return SAVE_NOT_FOUND;
@@ -689,6 +698,7 @@ int Database::Load(string str)
 
         room.members.clear();
         inf>>size2;
+        for(size_t j=0;j<size2;j++)
         {
             Account account;
             inf>>account;
@@ -721,7 +731,8 @@ int Database::Load(string str)
  */
 int Database::Save(string str)
 {
-    std::ofstream of(str.c_str(),std::ios::binary);
+    //std::ofstream of("text.sav");
+    std::ofstream of(str.c_str());
     if(!of.is_open())
     {
         return SAVE_NOT_FOUND;

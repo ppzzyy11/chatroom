@@ -55,7 +55,7 @@
 
 const size_t MSG_MAX_LEN= 1025;
 
-Converter con;
+Converter con("data.sav");
 
 
 static void accept_cb(struct evconnlistener*,evutil_socket_t,struct sockaddr *,int socklen,void*);
