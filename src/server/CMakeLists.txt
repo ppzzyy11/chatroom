@@ -1,0 +1,12 @@
+add_executable(
+    server
+    server.cpp
+    converter.cpp
+    converter.hpp
+    applicationprotocol.cpp
+    applicationprotocol.hpp
+    buffer.cpp
+    buffer.hpp
+    database.cpp
+    database.hpp
+    )
