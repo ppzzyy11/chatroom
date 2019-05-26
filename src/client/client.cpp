@@ -37,6 +37,14 @@
 
 #include "datastructure.hpp"
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <event2/bufferevent_ssl.h>
+
+#define CA_CERT_FILE "CA.crt"
+#define CLIENT_CERT_FILE "client.crt"
+#define CLIENT_KEY_FILE "client.key"
 
 using std::string;
 using std::vector;
@@ -61,6 +69,65 @@ int main(int argc,char* argv[])
     struct event* signal_event;
     struct sockaddr_in addr;
 
+    SSL_CTX* ctx=NULL;
+    SSL* ssl=NULL;
+
+    SSLeay_add_ssl_algorithms();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+    ERR_load_BIO_strings();
+
+
+    //SSL version2, v3
+    ctx=SSL_CTX_new(SSLv23_method());
+    if(ctx==NULL)
+    {
+        fprintf(stderr,"SSL_CTX_new error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    //verify server's certificate.
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+
+
+    //load CA.crt
+    fprintf(stdout,"SSL_CTX_load_verify_locations starts!\n");
+    if(!SSL_CTX_load_verify_locations(ctx,CA_CERT_FILE,NULL))
+    {
+        fprintf(stderr,"SSL_CTX_load_verify_locations error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    //load client's certificate.>>>>
+    fprintf(stdout,"SSL_CTX_use_certificate_file starts!\n");
+    if(SSL_CTX_use_certificate_file(ctx, CLIENT_CERT_FILE, SSL_FILETYPE_PEM)<=0)
+    {
+        fprintf(stderr,"SSL_CTX_use_certificate_file error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+
+    //load client's private key, if the server want to verify the client.
+    fprintf(stdout,"SSL_CTX_use_PrivateKey_file starts!\n");
+    if(SSL_CTX_use_PrivateKey_file(ctx,CLIENT_KEY_FILE,SSL_FILETYPE_PEM)<=0)
+    {
+        fprintf(stderr,"SSL_CTX_load_use_PrivateKey_file error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+
+    //If the private key right?
+    fprintf(stdout,"SSL_CTX_check_private_key starts!!\n");
+    if(!SSL_CTX_check_private_key(ctx))
+    {
+        fprintf(stderr,"SSL_CTX_check_private_key error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
 
     //event_base
     base=event_base_new();
@@ -73,14 +140,17 @@ int main(int argc,char* argv[])
         fprintf(stdout,"Initialize libevent.\n");
     }
 
-    //addr
+    fprintf(stdout,"Initialize addr!\n");
     memset(&addr,0,sizeof(addr));
     addr.sin_family=AF_INET;
     addr.sin_addr.s_addr=inet_addr(argv[1]);
     addr.sin_port=htons(atoi(argv[2]));
 
-    //bufferevent
-    bev=bufferevent_socket_new(base,-1,BEV_OPT_CLOSE_ON_FREE);
+    ssl=SSL_new(ctx);
+    fprintf(stdout,"Initialize openssl socket!\n");
+    bev = bufferevent_openssl_socket_new(base, -1, ssl,
+            BUFFEREVENT_SSL_CONNECTING,
+            BEV_OPT_CLOSE_ON_FREE);
     if(!bev)
     {
         fprintf(stderr,"Could not initialize bufferevent!\n");
@@ -127,6 +197,9 @@ int main(int argc,char* argv[])
     pthread_cancel(p);
 	event_free(signal_event);
 	event_base_free(base);
+
+    SSL_free(ssl);
+    SSL_CTX_free(ctx);
 
 	printf("done\n");
 	return 0;

@@ -53,6 +53,15 @@
 
 #include "converter.hpp"
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <event2/bufferevent_ssl.h>
+
+#define CA_CERT_FILE "CA.crt"
+#define SERVER_CERT_FILE "server.crt"
+#define SERVER_KEY_FILE "server.key"
+
 const size_t MSG_MAX_LEN= 1025;
 
 Converter con("data.sav");
@@ -80,6 +89,14 @@ int main(int argc, char* argv[])
 
     struct sockaddr_in addr;
 
+    SSL_CTX* ctx;
+    SSL* ssl;
+
+    SSLeay_add_ssl_algorithms();
+    OpenSSL_add_all_algorithms();
+    SSL_load_error_strings();
+    ERR_load_BIO_strings();
+
 #ifdef _WIN32
 	WSADATA wsa_data;
 	WSAStartup(0x0201, &wsa_data);
@@ -100,8 +117,58 @@ int main(int argc, char* argv[])
 	addr.sin_port = htons(atoi(argv[1]));
     fflush(stdout);
 
+    ctx=SSL_CTX_new(SSLv23_method());
 
-	listener = evconnlistener_new_bind(base, accept_cb, (void *)base,
+    if(ctx==NULL)
+    {
+        fprintf(stderr,"SSL_CTX_new error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    //don't verify client's certificate.
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+
+
+    //load CA.crt
+    fprintf(stdout,"SSL_CTX_load_verify_locations starts!\n");
+    if(!SSL_CTX_load_verify_locations(ctx,CA_CERT_FILE,NULL))
+    {
+        fprintf(stderr,"SSL_CTX_load_verify_locations error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    //load server.crt
+    fprintf(stdout,"SSL_CTX_use_certificate_file starts!\n");
+    if(!SSL_CTX_use_certificate_file(ctx,SERVER_CERT_FILE,SSL_FILETYPE_PEM))
+    {
+        fprintf(stderr,"SSL_CTX_use_certificate_file error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+
+    //load private key
+    fprintf(stdout,"SSL_CTX_use_PrivateKey_file starts!\n");
+    if(SSL_CTX_use_PrivateKey_file(ctx, SERVER_KEY_FILE, SSL_FILETYPE_PEM)<=0)
+    {
+        fprintf(stderr,"SSL_CTX_use_PrivateKey_file error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+    //verify the private key
+    if(!SSL_CTX_check_private_key(ctx))
+    {
+        fprintf(stderr,"SSL_CTX_check_private_key error!\n");
+        ERR_print_errors_fp(stderr);
+        return -1;
+    }
+
+
+
+	listener = evconnlistener_new_bind(base, accept_cb, (void *)ctx,
 	    LEV_OPT_REUSEABLE|LEV_OPT_CLOSE_ON_FREE, -1,
 	    (struct sockaddr*)&addr,
 	    sizeof(addr));
@@ -129,6 +196,7 @@ int main(int argc, char* argv[])
 	evconnlistener_free(listener);
 	event_free(signal_event);
 	event_base_free(base);
+    SSL_CTX_free(ctx);
 
 	printf("done\n");
 	return 0;
@@ -139,11 +207,19 @@ static void
 accept_cb(struct evconnlistener *listener, evutil_socket_t fd,
     struct sockaddr *sa, int socklen, void *user_data)
 {
-	struct event_base *base = (struct event_base*)user_data;
+	struct event_base *base;
 	struct bufferevent *bev;
 
-    //build a new bufferevent for the new client.
-	bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+    SSL_CTX *server_ctx;
+    SSL *client_ctx;
+
+    server_ctx=(SSL_CTX*) user_data;
+    client_ctx=SSL_new(server_ctx);
+
+    base=evconnlistener_get_base(listener);
+
+    //build a new ssl bufferevent
+    bev = bufferevent_openssl_socket_new(base,fd,client_ctx,BUFFEREVENT_SSL_ACCEPTING,BEV_OPT_CLOSE_ON_FREE);
 	if (!bev) {
 		fprintf(stderr, "Error constructing bufferevent!");
 		event_base_loopbreak(base);
@@ -199,11 +275,13 @@ static void clnt_error_cb(struct bufferevent* bev,short events, void *user_data)
 		printf("Connection closed.\n");
         //send a message to the application layer to remove the client's information.
         //get a vector of messages(send STRING to WHOM)
-        con.ConError(user_data);
 	} else if (events & BEV_EVENT_ERROR) {
 		printf("Got an error on the connection: %s\n",
 		    strerror(errno));/*XXX win32*/
-	}
+    }else if(events & BEV_EVENT_CONNECTED){
+		printf("Connection finished.\n",events);
+        return ;
+    }
 	/* None of the other events can happen here, since we haven't enabled
 	 * timeouts */
 	bufferevent_free(bev);
