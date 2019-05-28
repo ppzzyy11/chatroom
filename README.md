@@ -49,8 +49,9 @@ This is a chatroom based libevent.
     Some test uses the google-test.
 
 ## Protocols Stack:
-|APP|a Customed Application Protocol|
+|Layer|Spec|
 |-|-|
+|APP|a Customed Application Protocol|
 |SSL|bufferevent_ssl|
 |TCP|libevent|
 
