@@ -24,10 +24,8 @@ This is a chatroom based libevent.
     ./src/applicationprotocol/
     The Costomed Application Protocol.
 
-
     ./srr/buffer/
     A buffer than conver bytes into messages of the Customed Application Protocol.
-
 
     ./src/client/
     A client interacts with commands.
@@ -52,7 +50,7 @@ This is a chatroom based libevent.
 
 ## Protocols Stack:
 |APP|a Customed Application Protocol|
-|-|
+|-|-|
 |SSL|bufferevent_ssl|
 |TCP|libevent|
 
@@ -60,5 +58,5 @@ This is a chatroom based libevent.
 
 See "Architecture.dia".
 
-##Misc:
+## Misc:
 The diagrams in the design file are out of date. But I am too lazy to overwrite them.
