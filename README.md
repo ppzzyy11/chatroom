@@ -56,8 +56,8 @@ This is a chatroom based libevent.
 |TCP|libevent|
 
 ## Architecture:
+![Architecture](./design/Architecture.png  "Architecture")
 
-See "Architecture.dia".
 
 ## Misc:
-The diagrams in the design file are out of date. But I am too lazy to overwrite them.
+The diagrams in the design file are out of date. 
