@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 {
     if(argc<2)
     {
-        fprintf(stderr,"Usage: %s <port>\n",argv[0]);
+        Log("Usage:"+string(argv[0])+" <port>\n",2);
         return -1;
     }
 
@@ -104,24 +104,23 @@ int main(int argc, char* argv[])
 
 	base = event_base_new();
 	if (!base) {
-		fprintf(stderr, "Could not initialize libevent!\n");
+        Log("Could not initialize libevent!\n",2);
 		return 1;
 	}else
     {
-        fprintf(stdout, "Initilialize libevent.\n");
+        Log("Initilialize libevent.\n",1);
     }
 
 	memset(&addr,0, sizeof(addr));
 	addr.sin_family = AF_INET;
     addr.sin_addr.s_addr=htonl(INADDR_ANY);
 	addr.sin_port = htons(atoi(argv[1]));
-    fflush(stdout);
 
     ctx=SSL_CTX_new(SSLv23_method());
 
     if(ctx==NULL)
     {
-        fprintf(stderr,"SSL_CTX_new error!\n");
+        Log("SSL_CTX_new error!\n",2);
         ERR_print_errors_fp(stderr);
         return -1;
     }
@@ -131,29 +130,30 @@ int main(int argc, char* argv[])
 
 
     //load CA.crt
-    fprintf(stdout,"SSL_CTX_load_verify_locations starts!\n");
+    Log("SSL_CTX_load_verify_locations starts!\n",1);
     if(!SSL_CTX_load_verify_locations(ctx,CA_CERT_FILE,NULL))
     {
-        fprintf(stderr,"SSL_CTX_load_verify_locations error!\n");
+        Log("SSL_CTX_load_verify_locations error!\n",2);
         ERR_print_errors_fp(stderr);
         return -1;
     }
 
     //load server.crt
-    fprintf(stdout,"SSL_CTX_use_certificate_file starts!\n");
+
+    Log("SSL_CTX_use_certificate_file starts!\n",1);
     if(!SSL_CTX_use_certificate_file(ctx,SERVER_CERT_FILE,SSL_FILETYPE_PEM))
     {
-        fprintf(stderr,"SSL_CTX_use_certificate_file error!\n");
+        Log("SSL_CTX_use_certificate_file error!\n",2);
         ERR_print_errors_fp(stderr);
         return -1;
     }
 
 
     //load private key
-    fprintf(stdout,"SSL_CTX_use_PrivateKey_file starts!\n");
+    Log("SSL_CTX_use_PrivateKey_file starts!\n",1);
     if(SSL_CTX_use_PrivateKey_file(ctx, SERVER_KEY_FILE, SSL_FILETYPE_PEM)<=0)
     {
-        fprintf(stderr,"SSL_CTX_use_PrivateKey_file error!\n");
+        Log("SSL_CTX_use_PrivateKey_file error!\n",2);
         ERR_print_errors_fp(stderr);
         return -1;
     }
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
     //verify the private key
     if(!SSL_CTX_check_private_key(ctx))
     {
-        fprintf(stderr,"SSL_CTX_check_private_key error!\n");
+        Log("SSL_CTX_check_private_key error!\n",2);
         ERR_print_errors_fp(stderr);
         return -1;
     }
@@ -174,21 +174,21 @@ int main(int argc, char* argv[])
 	    sizeof(addr));
 
 	if (!listener) {
-		fprintf(stderr, "Could not create a listener!\n");
+		Log("Could not create a listener!\n",2);
 		return 1;
 	}else
     {
-        fprintf(stdout, "Create an evconnlistener.\n");
+        Log( "Create an evconnlistener.\n",1);
     }
 
 	signal_event = evsignal_new(base, SIGINT, signal_cb, (void *)base);
 
 	if (!signal_event || event_add(signal_event, NULL)<0) {
-		fprintf(stderr, "Could not create/add a signal event!\n");
+		Log("Could not create/add a signal event!\n",2);
 		return 1;
 	}else
     {
-        fprintf(stdout,"Create a signal_event.\n");
+        Log("Create a signal_event.\n",1);
     }
 
 	event_base_dispatch(base);
@@ -197,8 +197,8 @@ int main(int argc, char* argv[])
 	event_free(signal_event);
 	event_base_free(base);
     SSL_CTX_free(ctx);
+    Log("Server quit.\n",1);
 
-	printf("done\n");
 	return 0;
 }
 
@@ -221,7 +221,7 @@ accept_cb(struct evconnlistener *listener, evutil_socket_t fd,
     //build a new ssl bufferevent
     bev = bufferevent_openssl_socket_new(base,fd,client_ctx,BUFFEREVENT_SSL_ACCEPTING,BEV_OPT_CLOSE_ON_FREE);
 	if (!bev) {
-		fprintf(stderr, "Error constructing bufferevent!");
+		Log( "Error constructing bufferevent!",2);
 		event_base_loopbreak(base);
 		return;
 	}
@@ -229,14 +229,14 @@ accept_cb(struct evconnlistener *listener, evutil_socket_t fd,
 	bufferevent_enable(bev, EV_WRITE|EV_READ);
     con.ConAccept((void*)bev);
 
-    fprintf(stdout,"new connection from client %d.\n",fd);
+    Log("new connection from client "+std::to_string(fd)+".",1);
 }
 
 static void clnt_write_cb(struct bufferevent *bev, void *user_data)
 {
 	struct evbuffer *output = bufferevent_get_output(bev);
 	if (evbuffer_get_length(output) == 0) {
-		printf("flushed answer\n");
+        ;
 	}
 }
 static void clnt_read_cb(struct bufferevent* bev, void *user_data)
@@ -248,7 +248,6 @@ static void clnt_read_cb(struct bufferevent* bev, void *user_data)
 
 
     //recv the TCP stream, send it to the converter, get the return commands including (1. client's bev; 2. string to send.)
-    //fprintf(stdout,"Received:");
     std::vector<char> chs;
     while(len=evbuffer_remove(input,msg,sizeof(msg)-1))
     {
@@ -258,7 +257,6 @@ static void clnt_read_cb(struct bufferevent* bev, void *user_data)
         }
     }
     std::vector<std::pair<void*,std::string>> rtn=con.ConRead(user_data,chs);
-    //fflush(stdout);
 
     //send string to the client, dev
     //char* data="ACK\n";
@@ -272,18 +270,17 @@ static void clnt_read_cb(struct bufferevent* bev, void *user_data)
 static void clnt_error_cb(struct bufferevent* bev,short events, void *user_data)
 {
 	if (events & BEV_EVENT_EOF) {
-		printf("Connection closed.\n");
+		Log("Connection closed.\n",1);
         //send a message to the application layer to remove the client's information.
         //get a vector of messages(send STRING to WHOM)
 	} else if (events & BEV_EVENT_ERROR) {
-		printf("Got an error on the connection: %s\n",
-		    strerror(errno));/*XXX win32*/
+
+		Log("Got an error on the connection: "+string(strerror(errno)),2);/*XXX win32*/
     }else if(events & BEV_EVENT_CONNECTED){
-		printf("Connection finished.\n",events);
+		Log("Connection connected..\n",1);
         return ;
     }
-	/* None of the other events can happen here, since we haven't enabled
-	 * timeouts */
+	/* None of the other events can happen here, since we haven't enabled*/
 	bufferevent_free(bev);
 }
 
@@ -292,7 +289,7 @@ static void signal_cb(evutil_socket_t sig, short events, void *user_data)
 	struct event_base *base = (struct event_base*)user_data;
 	struct timeval delay = { 2, 0 };
 
-	printf("Caught an interrupt signal; exiting cleanly in two seconds.\n");
+	Log("Caught an interrupt signal; exiting cleanly in two seconds.\n",1);
 
 	event_base_loopexit(base, &delay);
 }

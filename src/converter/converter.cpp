@@ -22,6 +22,8 @@ Converter::Converter(string load):ApplicationProtocol(load)
     acc2bev.clear();
     bev2buf.clear();
     off_msgs.clear();
+    Log("Converter initilize...",1);
+    Log("Converter running...",1);
 }
 
 Converter::Converter()
@@ -32,6 +34,8 @@ Converter::Converter()
     acc2bev.clear();
     bev2buf.clear();
     off_msgs.clear();
+    Log("Converter initilize...",1);
+    Log("Converter running...",1);
 }
 
 Converter::~Converter()
@@ -42,6 +46,7 @@ Converter::~Converter()
     acc2bev.clear();
     bev2buf.clear();
     off_msgs.clear();
+    Log("Converter quit.",1);
 }
 
 vector<pair<void*,string>> Converter::ConRead(void* bev, vector<char> bytes)
@@ -52,6 +57,7 @@ vector<pair<void*,string>> Converter::ConRead(void* bev, vector<char> bytes)
     string str="";
     for(auto byte:bytes) str.push_back(byte);
 
+    Log("Converter Read callback...",1);
     if(bev2acc.find(bev)!=bev2acc.end())//online account
     {
         msgs=bev2buf[bev].Pour(str);
@@ -108,6 +114,7 @@ vector<pair<void*,string>> Converter::ConRead(void* bev, vector<char> bytes)
 
 int Converter::ConAccept(void* bev)
 {
+    Log("Converter Accept callback...",1);
     if(bev2buf.find(bev)!=bev2buf.end()) return -1;
     bev2buf[bev]=Buffer();
     return 0;
@@ -115,6 +122,7 @@ int Converter::ConAccept(void* bev)
 
 int Converter::ConError(void* bev)
 {
+    Log("Converter Error callback...",1);
     if(bev2buf.find(bev)==bev2buf.end()) return -1;
     Account account=bev2acc[bev];
 

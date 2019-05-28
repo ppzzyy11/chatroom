@@ -11,6 +11,8 @@
 #include <vector>
 #include <string>
 
+#include "datastructure.hpp"
+
 using std::string;
 using std::vector;
 

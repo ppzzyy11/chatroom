@@ -30,13 +30,18 @@ const unsigned char ApplicationProtocol::GET_ROOM=16;
 
 ApplicationProtocol::ApplicationProtocol(string load):Database(load)
 {
+    Log("ApplicationProtocol initilizing with file "+load+"...",1);
+    Log("ApplicationProtocol running...",1);
 }
 
 ApplicationProtocol::ApplicationProtocol():Database()
 {
+    Log("ApplicationProtocol initilizing...",1);
+    Log("ApplicationProtocol running...",1);
 }
 ApplicationProtocol::~ApplicationProtocol()
 {
+    Log("ApplicationProtocol quit.",1);
 }
 
 string ApplicationProtocol::GetStr(const string& command, size_t& i)
@@ -53,6 +58,7 @@ string ApplicationProtocol::GetStr(const string& command, size_t& i)
 
 vector<pair<string,string>> ApplicationProtocol::Exec(string command)
 {
+    string log="";
     vector<pair<string,string>> rtn;
     if(command.size()<=3) return rtn;
 
@@ -81,6 +87,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             user.nickname=      GetStr(command,i);
 
             AppRegister(rtn,user);
+            log+="Register";
             break;
 
         case LOGIN:
@@ -96,11 +103,13 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             user.account=       GetStr(command,i);
             room.id=            GetStr(command,i);
             AppGetRoom(rtn,user,room);
+            log+="AppGetRoom";
             break;
 
         case GET_ROOMS:
             user.account=       GetStr(command,i);
             AppGetRooms(rtn,user);
+            log+="AppGetRooms";
             break;
 
 
@@ -111,6 +120,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             room.description=   GetStr(command,i);
             room.passwd=        GetStr(command,i);
             AppBuildRoom(rtn,user,room);
+            log+="AppBuildRoom";
             break;
 
 
@@ -118,7 +128,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             user.account=       GetStr(command,i);
             room.id=            GetStr(command,i);
             AppCloseRoom(rtn,user,room);
-
+            log+="AppCloseRoom";
             break;
 
 
@@ -128,6 +138,8 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             id=          GetStr(command,i);
             newadmin=    GetStr(command,i);
             AppChangeRoomAdmin(rtn,oldadmin,id,newadmin);
+            log+="AppChangeRoomAdmin";
+            break;
             break;
 
 
@@ -136,6 +148,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             room.id=            GetStr(command,i);
             room.passwd=        GetStr(command,i);
             AppJoinRoom(rtn,user,room);
+            log+="AppJoinRoom";
             break;
 
 
@@ -143,7 +156,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             user.account=       GetStr(command,i);
             room.id=            GetStr(command,i);
             AppQuitRoom(rtn,user,room);
-
+            log+="AppQuitRoom";
             break;
 
 
@@ -152,6 +165,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             room.id=            GetStr(command,i);
             msg=                GetStr(command,i);
             AppSendMessageInRoom(rtn,user.account,room.id,msg);
+            log+="AppSendMessageInRoom";
             break;
 
 
@@ -160,6 +174,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             user.account=       GetStr(command,i);
             room.id=            GetStr(command,i);
             AppGetUsersInRoom(rtn,user,room);
+            log+="AppGetUsersInRoom";
             break;
 
 
@@ -168,6 +183,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             newadmin=           GetStr(command,i);
             msg=                GetStr(command,i);
             AppPrivateMessage(rtn,oldadmin,newadmin,msg);
+            log+="AppSendPrivateMessage";
             break;
 
 
@@ -177,6 +193,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
             id=            GetStr(command,i);
             newadmin=        GetStr(command,i);
             AppKickUser(rtn,oldadmin,id,newadmin);
+            log+="AppKickUser";
             break;
 
 
@@ -189,6 +206,7 @@ vector<pair<string,string>> ApplicationProtocol::Exec(string command)
 
             break;
     };
+    Log(log,1);
     return rtn;
 }
 
@@ -200,6 +218,7 @@ int ApplicationProtocol::Login(string str, Account&rtn_account, string& rtn)
     if(str.size()!=length+2)//message incomplete!!!
     {
         rtn="Imcomplete message.";
+        Log("ApplicationProtocol login unsuccussfully: incomplete message",2);
         return -1;
     }else
     {
@@ -222,8 +241,10 @@ int ApplicationProtocol::Login(string str, Account&rtn_account, string& rtn)
             if(status==Database::SUCCESS&&user.passwd==passwd)
             {
                 rtn_account=account;
+                Log("ApplicationProtocol login succussfully.",1);
                 return 0;
             }
+            Log("ApplicationProtocol login unsuccussfully: wrong password or unexisted account.",2);
             return -1;
             break;
 
@@ -235,9 +256,11 @@ int ApplicationProtocol::Login(string str, Account&rtn_account, string& rtn)
             rtn=ErrorHandle(status);
             if(status==Database::SUCCESS)
             {
+                Log("ApplicationProtocol register succussfully.",1);
                 return 1;
             }
             else {
+                Log("ApplicationProtocol register unsuccussfully.",1);
                 return -1;
             }
 

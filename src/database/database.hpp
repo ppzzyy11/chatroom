@@ -14,10 +14,13 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <unistd.h>
+
 
 #include "datastructure.hpp"
 
-//AddUser Error
 
 using std::string;
 using std::vector;
@@ -26,11 +29,15 @@ class Database{
         vector<Data_user> data_users;
         vector<Data_room> data_rooms;
 
-
-
-        int Log(string,int);
-
         string save;
+
+        std::mutex SaveMutex;
+        std::thread AutoSave;
+
+        void SaveEveryNSeconds(int);
+        static int N;
+        bool EXIT=0;
+
 
     protected:
     public:

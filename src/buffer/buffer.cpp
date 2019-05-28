@@ -14,15 +14,18 @@ using std::vector;
 Buffer::Buffer()
 {
     pool="";
+    Log("Buffer initilizing...",1);
 }
 
 Buffer::~Buffer()
 {
     pool="";
+    Log("Buffer quit.",1);
 }
 
 vector<string> Buffer::Pour(string str)
 {
+    Log("Buffer Pour str with size of "+std::to_string(str.size())+".",1);
     pool=pool+str;
     vector<string> rtn;
     while(pool.size()>3)
@@ -38,6 +41,7 @@ vector<string> Buffer::Pour(string str)
             pool=pool.substr(2+len);
         }
     }
+    Log("Buffer Pour generates messages with size of "+std::to_string(rtn.size())+".",1);
     return rtn;
 }
 

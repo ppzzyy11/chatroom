@@ -30,5 +30,7 @@ typedef struct data_room{
     Blacklist blacklist;
 }Data_room;
 
+static unsigned int Log_Num=0;
+int Log(std::string,int);
 
 #endif //!_DATASTRUCTURE_HPP_

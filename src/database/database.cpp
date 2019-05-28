@@ -67,6 +67,20 @@ const size_t Database::PASSWD_UPPER_LENGTH =   20;
 const size_t Database::ROOM_NAME_LOWER_LENGTH =   2;
 const size_t Database::ROOM_NAME_UPPER_LENGTH =   20;
 
+int Database::N=10;
+
+void Database::SaveEveryNSeconds(int n)
+{
+    Log("Databse SaveEveryNSeconds thread begin...",1);
+    while(EXIT!=1)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(n));
+        Log("Databse SaveEveryNSeconds try to save...",1);
+        Save(save);
+    }
+    //return NULL;
+}
+
 /*
  * constructor without para, use databas.sav as load file name
  */
@@ -77,6 +91,11 @@ Database::Database()
     data_rooms.clear();
     Data_user user;
     save="database.sav";
+    Log("Database initilization.",1);
+
+    AutoSave=std::thread(&Database::SaveEveryNSeconds,this,N);
+    Log("Databse create a thread to AutoSave.\n",1);
+
 }
 
 /*
@@ -94,19 +113,28 @@ Database::Database(string load)
     if( status!=0 )
     {
         ErrorHandle(status);
-        return ;
     }
+    Log("Database initilization load from file:"+load+".",1);
+    AutoSave=std::thread(&Database::SaveEveryNSeconds,this,N);
+    Log("Databse create a thread to AutoSave.\n",1);
+
 }
 
 Database::~Database()
 {
+
+    EXIT=1;
+    AutoSave.join();
+    Log("Databse thread quit...",1);
     int status = Save(save);
+
     if( status !=0 )
     {
         ErrorHandle(status);
     }
     data_users.clear();
     data_rooms.clear();
+    Log("Databse quit.",1);
 }
 
 
@@ -514,7 +542,6 @@ int Database::OneUserLeaveRoom(Account account, Id id)
  */
 int Database::KickUserOut(Account admin,Id id,Account acc)
 {
-    std::cout<<"Kick starts."<<"\n";
     for(auto& room:data_rooms)
     {
         if(room.id==id)
@@ -529,10 +556,8 @@ int Database::KickUserOut(Account admin,Id id,Account acc)
                     return ADMIN_NOT_ALLOWED_LEAVE;
                 }else
                 {
-                    std::cout<<"Kicked:"<<acc<<"\n";
                     for(auto& member:room.members)
                     {
-                        std::cout<<"member:"<<member<<std::endl;
                         if(member==acc)
                         {
                             member=room.members.back();
@@ -558,7 +583,7 @@ int Database::KickUserOut(Account admin,Id id,Account acc)
  */
 string Database::ErrorHandle(unsigned int erron)
 {
-    string rtn="";//std::to_string(erron);
+    string rtn="Database  >>>>   ";//std::to_string(erron);
     switch(erron)
     {
         case SUCCESS:
@@ -716,6 +741,7 @@ int Database::Load(string str)
         data_rooms.push_back(room);
     }
     inf.close();
+    Log("Database load from file:"+str+".",1);
     return SUCCESS;
 }
 
@@ -732,6 +758,7 @@ int Database::Load(string str)
 int Database::Save(string str)
 {
     //std::ofstream of("text.sav");
+    SaveMutex.lock();
     std::ofstream of(str.c_str());
     if(!of.is_open())
     {
@@ -766,34 +793,9 @@ int Database::Save(string str)
     }
 
     of.close();
+    SaveMutex.unlock();
+    Log("Database save to file "+str+" successfully.",1);
     return SUCCESS;
 }
 
-/*
- * Log system
- *
- * @para Log content
- * @para 1 for stdout, 2 for stderr
- * return 0 for SUCCESS
- */
-int Database::Log(string str, int i=-1)
-{
-    FILE* fp;
-    switch(i)
-    {
-        case -1:
-            return 0;
 
-        case 1:
-            fp=stdout;
-            str="\033[32m"+str+"\n\033[0m";
-            break;
-
-        case 2:
-            fp=stderr;
-            str="\033[31m"+str+"\n\033[0m";
-            break;
-    }
-    fprintf(fp,"%s",str.c_str());
-    return 0;
-}

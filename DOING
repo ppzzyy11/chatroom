@@ -1,6 +1,6 @@
 + Write a professional CMakeLists.txt
 + Add SSL/TSL Layer between TCP and IP(in libevent).
-- Change the Database into Redis.
-- Use the Log of Linux.
-- Change into a daemon.
-- Add the "chroot" command.
++ Change the Database into Redis. (Too cumbersome, use a thread to write to a file every 10 seconds.)
++ Use the Log of Linux.( use std::cout and std::cerr instead.)
+- Change into a daemon. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> unnecessary
+- Add the "chroot" command. >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> unnecessary

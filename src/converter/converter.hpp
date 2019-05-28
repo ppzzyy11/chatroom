@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include "applicationprotocol.hpp"
 #include "buffer.hpp"
+#include "datastructure.hpp"
 
 using std::pair;
 using std::vector;
